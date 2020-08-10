@@ -2,6 +2,7 @@ import pygame
 from pygame.constants import (
     QUIT, KEYDOWN, K_LEFT, K_RIGHT, K_DOWN, K_UP
 )
+import random
 
 class Board(object):
         def __init__(self, width, height, scale):
@@ -18,11 +19,12 @@ class Board(object):
             for col in range(0, self.width, self.scale):
                 pygame.draw.line(self.window, (255, 255, 255), (col, 0), (col, self.height))
 
-        def draw(self, snake):
+        def draw(self, snake, food):
             #draw grid and objects onto grid
             self.window.fill((0, 0, 0))
             self.drawBoxes()
             snake.draw(self)
+            food.draw(self)
             pygame.display.update()
 
 class Location(object):
@@ -95,6 +97,11 @@ class Snake(object):
                 break
         self.moveBy(nextLoc)
 
+    def shouldGrow(self, food, board):
+        if (self.bodyLoc[0] == food.location):
+            self.grow()
+            food.changeLocation(self, board)
+
     def inBody(self):
         # get bool for head location is in body
         return self.bodyLoc[0] in self.bodyLoc[1:len(self.bodyLoc) - 1]
@@ -123,3 +130,36 @@ class Snake(object):
             else:
                 pygame.draw.rect(board.window, (0,100,0),
                         (recTopLeftx*scale + 2, recTopLefty* scale + 2, scale - 3 , scale - 3))
+
+class Food(object):
+    def __init__(self, board, snake):
+        while True:
+            randX = random.randrange(board.width//board.scale)
+            randY = random.randrange(board.height//board.scale)
+            randLoc = Location(randX, randY)
+            if (randLoc == snake.bodyLoc[0]):
+                continue
+            else:
+                break
+        self.location = randLoc
+
+    def draw(self, board):
+        scale = board.scale
+        recTopLeftx = self.location.x
+        recTopLefty = self.location.y
+        pygame.draw.rect(board.window, (255, 0, 0),
+                (recTopLeftx*scale + 2, recTopLefty*scale + 2, scale - 3 , scale - 3))
+
+    def changeLocation(self, snake, board):
+        if (self.location == snake.bodyLoc[0]):
+            while True:
+                randX = random.randrange(board.width//board.scale)
+                randY = random.randrange(board.height//board.scale)
+                randLoc = Location(randX, randY)
+                if (len(list(filter(lambda loc:loc == randLoc, snake.bodyLoc))) > 0):
+                    # if the random location matches any of the locations of the
+                    # body, make another new random location for the food
+                    continue
+                else:
+                    break
+            self.location = randLoc
